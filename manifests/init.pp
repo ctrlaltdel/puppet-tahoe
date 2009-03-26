@@ -80,8 +80,9 @@ define tahoe::node ($ensure = present, $directory, $type) {
   }
 
   $tahoe_cfg = "${directory}/tahoe.cfg"
+  $user = "tahoe-${name}"
 
-  user {$name:
+  user {$user:
     ensure     => $ensure,
     home       => $directory,
   }
@@ -91,7 +92,7 @@ define tahoe::node ($ensure = present, $directory, $type) {
       present => "directory",
       absent  => "absent"
     },
-    owner  => $name,
+    owner  => $user,
     mode   => 700,
   }
 
@@ -106,7 +107,7 @@ define tahoe::node ($ensure = present, $directory, $type) {
 
       exec {"create ${type} ${name}":
         command   => "tahoe create-${type} --basedir=${directory}",
-        user      => $name,
+        user      => $user,
         logoutput => on_failure,
         creates   => "${directory}/tahoe-${type}.tac",
         require   => File[$directory],
