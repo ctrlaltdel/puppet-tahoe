@@ -1,4 +1,14 @@
 class tahoe {
+  case $operatingsystem {
+    Debian: { include tahoe::debian }
+    default:  { include tahoe::base }
+  }
+}
+
+class tahoe::base {
+}
+
+class tahoe::egg {
   package{
     "python2.4":
       ensure => present;
@@ -21,11 +31,38 @@ class tahoe {
   }
 }
 
-define tahoe::server (
-  $ensure = present,
-  $directory,
-  $introducer,
-  $webport="tcp:8123:interface=127.0.0.1") {
+class tahoe::debian {
+  # BUG: Those packages are not authenticated
+
+  case $lsbdistcodename {
+    etch:  { $dist = "etch" }
+    lenny: { $dist = "etch" }
+  }
+
+  apt::sources_list {"allmydata":
+    ensure => present,
+    content => "deb http://allmydata.org/debian/ ${dist} main tahoe
+deb-src http://allmydata.org/debian/ ${dist} main tahoe",
+  }
+
+  package {"allmydata-tahoe":
+    ensure => present,
+  }
+}
+
+define tahoe::introducer ($ensure = present, $directory) {
+  tahoe::node {$name:
+    ensure    => $ensure,
+    directory => $directory,
+    type      => "introducer",
+  }
+}
+
+define tahoe::node ($ensure = present, $directory, $type) {
+  case $type {
+    client,introducer: {}
+    default: { fail "unknown node type: ${type}" }
+  }
 
   user {$name:
     ensure     => $ensure,
@@ -33,45 +70,33 @@ define tahoe::server (
   }
 
   file {$directory:
-    ensure => present,
+    ensure => $ensure ? {
+      present => "directory",
+      absent  => "absent"
+    },
     owner  => $name,
     mode   => 700,
   }
 
+  file {"/etc/init.d/tahoe-${name}":
+    ensure  => $ensure,
+    content => template("tahoe/tahoe.init.erb"),
+    mode    => 755,
+  }
+
   case $ensure {
     present: {
-      exec {"create client ${name}":
-        command   => "tahoe create-client --basedir=${directory} --webport='${webport}'",
+      exec {"create ${type} ${name}":
+        command   => "tahoe create-${type} --basedir=${directory}",
         user      => $name,
         logoutput => on_failure,
-        creates   => "${directory}/tahoe-client.tac",
+        creates   => "${directory}/tahoe-${type}.tac",
         require   => File[$directory],
       }
 
       exec {"update-rc.d tahoe-${name} defaults":
         creates => "/etc/rc2.d/S20tahoe-${name}",
         require => File["/etc/init.d/tahoe-${name}"],
-      }
-
-      file {"${directory}/introducer.furl":
-        ensure  => $ensure,
-        owner   => $name,
-        content => "${introducer}\n",
-        require => Exec["create client ${name}"],
-      }
-
-      file {"${directory}/webport":
-        ensure  => $ensure,
-        owner   => $name,
-        content => "${webport}\n",
-        require => Exec["create client ${name}"],
-      }
-
-    
-      file {"${directory}/nickname":
-        ensure  => $ensure,
-        content => "${name}@${fqdn}\n",
-        require => Exec["create client ${name}"],
       }
 
       service {"tahoe-${name}":
@@ -85,11 +110,5 @@ define tahoe::server (
         onlyif => "test -f /etc/rc2.d/S20tahoe-${name}",
       }
     }
-  }
-
-  file {"/etc/init.d/tahoe-${name}":
-    ensure  => $ensure,
-    content => template("tahoe/tahoe.init.erb"),
-    mode    => 755,
   }
 }
