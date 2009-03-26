@@ -6,9 +6,13 @@ class tahoe {
 }
 
 class tahoe::base {
+  file {"/usr/share/augeas/lenses/tahoe.aug":
+    ensure => present,
+    source => "puppet:///tahoe/tahoe.aug",
+  }
 }
 
-class tahoe::egg {
+class tahoe::egg inherits tahoe::base {
   package{
     "python2.4":
       ensure => present;
@@ -31,7 +35,7 @@ class tahoe::egg {
   }
 }
 
-class tahoe::debian {
+class tahoe::debian inherits tahoe::base {
   # BUG: Those packages are not authenticated
 
   case $lsbdistcodename {
@@ -50,11 +54,22 @@ deb-src http://allmydata.org/debian/ ${dist} main tahoe",
   }
 }
 
-define tahoe::introducer ($ensure = present, $directory) {
+define tahoe::introducer (
+  $ensure = present,
+  $directory,
+  $webport="tcp:8123:interface=127.0.0.1"
+) {
   tahoe::node {$name:
     ensure    => $ensure,
     directory => $directory,
     type      => "introducer",
+  }
+
+  augeas {"webport":
+    context   => "/files${directory}/tahoe.cfg",
+    load_path => $directory,
+    changes   => "set node/web.port ${webport}",
+    notify    => Service["tahoe-${name}"],
   }
 }
 
@@ -63,6 +78,8 @@ define tahoe::node ($ensure = present, $directory, $type) {
     client,introducer: {}
     default: { fail "unknown node type: ${type}" }
   }
+
+  $tahoe_cfg = "${directory}/tahoe.cfg"
 
   user {$name:
     ensure     => $ensure,
@@ -86,6 +103,7 @@ define tahoe::node ($ensure = present, $directory, $type) {
 
   case $ensure {
     present: {
+
       exec {"create ${type} ${name}":
         command   => "tahoe create-${type} --basedir=${directory}",
         user      => $name,
@@ -94,6 +112,9 @@ define tahoe::node ($ensure = present, $directory, $type) {
         require   => File[$directory],
       }
 
+      #
+      # Service
+      #
       exec {"update-rc.d tahoe-${name} defaults":
         creates => "/etc/rc2.d/S20tahoe-${name}",
         require => File["/etc/init.d/tahoe-${name}"],
@@ -102,6 +123,16 @@ define tahoe::node ($ensure = present, $directory, $type) {
       service {"tahoe-${name}":
         ensure  => running,
         require => File["/etc/init.d/tahoe-${name}"],
+      }
+
+      #
+      # Augeas
+      #
+      $augeas_name = gsub($name, "-", "")
+
+      file {"${directory}/${augeas_name}.aug":
+        ensure => present,
+        content => template("tahoe/tahoe.aug.erb"),
       }
     }
 
