@@ -57,21 +57,58 @@ deb-src http://allmydata.org/debian/ ${dist} main tahoe",
 define tahoe::introducer (
   $ensure = present,
   $directory,
-  $webport="tcp:8123:interface=127.0.0.1"
+  $webport = false
 ) {
+  notice "Tahoe introducer: ${name}"
+
   tahoe::node {$name:
     ensure    => $ensure,
     directory => $directory,
     type      => "introducer",
   }
 
-  augeas {"webport":
-    context   => "/files${directory}/tahoe.cfg",
-    load_path => $directory,
-    changes   => "set node/web.port ${webport}",
-    notify    => Service["tahoe-${name}"],
+  if $webport {
+    augeas {"webport":
+      context   => "/files${directory}/tahoe.cfg",
+      load_path => $directory,
+      changes   => "set /node/web.port ${webport}",
+    }
   }
 }
+
+define tahoe::storage (
+  $ensure = present,
+  $directory,
+  $introducer,
+  $webport = false
+) {
+  tahoe::node {$name:
+    ensure    => $ensure,
+    directory => $directory,
+    type      => "client",
+  }
+
+  augeas {"introducer":
+    context   => "/files${directory}/tahoe.cfg",
+    load_path => $directory,
+    changes   => "set /client/introducer.furl \"${introducer}\"",
+  }
+
+  augeas {"storage":
+    context   => "/files${directory}/tahoe.cfg",
+    load_path => $directory,
+    changes   => "set /storage/enabled true",
+  }
+
+  if $webport {
+    augeas {"webport":
+      context   => "/files${directory}/tahoe.cfg",
+      load_path => $directory,
+      changes   => "set /node/web.port \"${webport}\"",
+    }
+  }
+}
+
 
 define tahoe::node ($ensure = present, $directory, $type) {
   case $type {
@@ -100,6 +137,7 @@ define tahoe::node ($ensure = present, $directory, $type) {
     ensure  => $ensure,
     content => template("tahoe/tahoe.init.erb"),
     mode    => 755,
+    require => Exec["create ${type} ${name}"],
   }
 
   case $ensure {
@@ -134,6 +172,14 @@ define tahoe::node ($ensure = present, $directory, $type) {
       file {"${directory}/${augeas_name}.aug":
         ensure => present,
         content => template("tahoe/tahoe.aug.erb"),
+        require => Exec["create ${type} ${name}"],
+      }
+
+      augeas {"nickname":
+        context   => "/files${directory}/tahoe.cfg",
+        load_path => $directory,
+        changes   => "set node/nickname ${name}",
+        require => Exec["create ${type} ${name}"],
       }
     }
 
