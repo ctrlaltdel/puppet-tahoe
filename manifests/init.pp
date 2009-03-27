@@ -68,7 +68,7 @@ define tahoe::introducer (
   }
 
   if $webport {
-    augeas {"webport":
+    augeas {"tahoe/${name}/webport":
       context   => "/files${directory}/tahoe.cfg",
       load_path => $directory,
       changes   => "set /node/web.port ${webport}",
@@ -88,20 +88,20 @@ define tahoe::storage (
     type      => "client",
   }
 
-  augeas {"introducer":
+  augeas {"tahoe/${name}/introducer":
     context   => "/files${directory}/tahoe.cfg",
     load_path => $directory,
     changes   => "set /client/introducer.furl \"${introducer}\"",
   }
 
-  augeas {"storage":
+  augeas {"tahoe/${name}/storage":
     context   => "/files${directory}/tahoe.cfg",
     load_path => $directory,
     changes   => "set /storage/enabled true",
   }
 
   if $webport {
-    augeas {"webport":
+    augeas {"tahoe/${name}/webport":
       context   => "/files${directory}/tahoe.cfg",
       load_path => $directory,
       changes   => "set /node/web.port \"${webport}\"",
@@ -195,7 +195,7 @@ define tahoe::node ($ensure = present, $directory, $type) {
         require => Exec["create ${type} ${name}"],
       }
 
-      augeas {"nickname":
+      augeas {"tahoe/${name}/nickname":
         context   => "/files${directory}/tahoe.cfg",
         load_path => $directory,
         changes   => "set node/nickname ${name}",
