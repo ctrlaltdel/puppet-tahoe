@@ -59,8 +59,6 @@ define tahoe::introducer (
   $directory,
   $webport = false
 ) {
-  notice "Tahoe introducer: ${name}"
-
   tahoe::node {$name:
     ensure    => $ensure,
     directory => $directory,
@@ -79,9 +77,49 @@ define tahoe::introducer (
 define tahoe::storage (
   $ensure = present,
   $directory,
-  $introducer,
+  $introducer_furl,
   $webport = false,
-  $stats_gatherer = false
+  $stats_gatherer_furl = false,
+  $helper_furl = false
+) {
+  tahoe::client {$name:
+    ensure          => $ensure,
+    directory       => $directory,
+    introducer_furl => $introducer_furl,
+    webport         => $webport,
+    stats_gatherer  => $stats_gatherer,
+    helper_furl     => $helper_furl,
+    storage         => "true",
+  }
+}
+
+define tahoe::helper (
+  $ensure = present,
+  $directory,
+  $introducer_furl,
+  $webport = false,
+  $stats_gatherer_furl = false
+) {
+  tahoe::client {$name:
+    ensure                => $ensure,
+    directory             => $directory,
+    introducer_furl       => $introducer_furl,
+    webport               => $webport,
+    stats_gatherer_furl   => $stats_gatherer_furl,
+    helper                => "true",
+  }
+}
+
+
+define tahoe::client (
+  $ensure = present,
+  $directory,
+  $introducer_furl,
+  $webport = false,
+  $stats_gatherer_furl = false,
+  $helper_furl = false,
+  $storage = "false",
+  $helper  = "false"
 ) {
   tahoe::node {$name:
     ensure    => $ensure,
@@ -94,8 +132,9 @@ define tahoe::storage (
     load_path => $directory,
     force     => true,
     changes   => [
-      "set /client/introducer.furl \"${introducer}\"",
-      "set /storage/enabled true",
+      "set /client/introducer.furl \"${introducer_furl}\"",
+      "set /storage/enabled ${storage}",
+      "set /helper/enabled ${helper}",
       "set /node/web.port \"${webport}\"",
 
       $webport ? {
@@ -103,10 +142,15 @@ define tahoe::storage (
         default => "set /node/web.port \"${webport}\"",
       },
 
-      $stats_gatherer ? {
+      $stats_gatherer_furl ? {
         false   => "",
-        default => "set /client/stats_gatherer.furl \"${stats_gatherer}\"",
-      }
+        default => "set /client/stats_gatherer.furl \"${stats_gatherer_furl}\"",
+      },
+
+      $helper_furl ? {
+        false   => "",
+        default => "set /client/helper.furl \"${helper_furl}\"",
+      },
     ],
     notify => Service["tahoe-${name}"],
   }
@@ -114,21 +158,12 @@ define tahoe::storage (
 
 define tahoe::stats-gatherer (
   $ensure = present,
-  $directory,
-  $webport = false
+  $directory
 ) {
   tahoe::node {$name:
     ensure    => $ensure,
     directory => $directory,
     type      => "stats-gatherer",
-  }
-
-  if $webport {
-    augeas {"tahoe/${name}/webport":
-      context   => "/files${directory}/tahoe.cfg",
-      load_path => $directory,
-      changes   => "set /node/web.port ${webport}",
-    }
   }
 }
 
