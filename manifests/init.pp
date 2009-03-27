@@ -50,7 +50,7 @@ deb-src http://allmydata.org/debian/ ${dist} main tahoe",
   }
 
   package {"allmydata-tahoe":
-    ensure => present,
+    ensure => "1.3.0",
   }
 }
 
