@@ -89,32 +89,26 @@ define tahoe::storage (
     type      => "client",
   }
 
-  augeas {"tahoe/${name}/introducer":
-    context   => "/files${directory}/tahoe.cfg",
+  augeas {$name:
+    context   => "/files${directory}/tahoe.cfg/",
     load_path => $directory,
-    changes   => "set /client/introducer.furl \"${introducer}\"",
-  }
+    force     => true,
+    changes   => [
+      "set /client/introducer.furl \"${introducer}\"",
+      "set /storage/enabled true",
+      "set /node/web.port \"${webport}\"",
 
-  augeas {"tahoe/${name}/storage":
-    context   => "/files${directory}/tahoe.cfg",
-    load_path => $directory,
-    changes   => "set /storage/enabled true",
-  }
+      $webport ? {
+        false   => "",
+        default => "set /node/web.port \"${webport}\"",
+      },
 
-  if $webport {
-    augeas {"tahoe/${name}/webport":
-      context   => "/files${directory}/tahoe.cfg",
-      load_path => $directory,
-      changes   => "set /node/web.port \"${webport}\"",
-    }
-  }
-
-  if $stats_gatherer {
-    augeas {"tahoe/${name}/stats_gatherer.furl":
-      context   => "/files${directory}/tahoe.cfg",
-      load_path => $directory,
-      changes   => "set /client/stats_gatherer.furl \"${stats_gatherer}\"",
-    }
+      $stats_gatherer ? {
+        false   => "",
+        default => "set /client/stats_gatherer.furl \"${stats_gatherer}\"",
+      }
+    ],
+    notify => Service["tahoe-${name}"],
   }
 }
 
@@ -207,8 +201,9 @@ define tahoe::node ($ensure = present, $directory, $type) {
       augeas {"tahoe/${name}/nickname":
         context   => "/files${directory}/tahoe.cfg",
         load_path => $directory,
-        changes   => "set node/nickname ${name}",
-        require => Exec["create ${type} ${name}"],
+        changes   => "set node/nickname ${name}@${fqdn}",
+        force     => true,
+        require   => Exec["create ${type} ${name}"],
       }
     }
 
