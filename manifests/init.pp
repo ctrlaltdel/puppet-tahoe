@@ -127,32 +127,36 @@ define tahoe::client (
     type      => "client",
   }
 
-  augeas {$name:
-    context   => "/files${directory}/tahoe.cfg/",
-    load_path => $directory,
-    force     => true,
-    changes   => [
-      "set /client/introducer.furl \"${introducer_furl}\"",
-      "set /storage/enabled ${storage}",
-      "set /helper/enabled ${helper}",
-      "set /node/web.port \"${webport}\"",
-
-      $webport ? {
-        false   => "",
-        default => "set /node/web.port \"${webport}\"",
-      },
-
-      $stats_gatherer_furl ? {
-        false   => "",
-        default => "set /client/stats_gatherer.furl \"${stats_gatherer_furl}\"",
-      },
-
-      $helper_furl ? {
-        false   => "",
-        default => "set /client/helper.furl \"${helper_furl}\"",
-      },
-    ],
-    notify => Service["tahoe-${name}"],
+  case $ensure {
+    present: {
+      augeas {$name:
+        context   => "/files${directory}/tahoe.cfg/",
+        load_path => $directory,
+        force     => true,
+        changes   => [
+          "set /client/introducer.furl \"${introducer_furl}\"",
+          "set /storage/enabled ${storage}",
+          "set /helper/enabled ${helper}",
+          "set /node/web.port \"${webport}\"",
+    
+          $webport ? {
+            false   => "",
+            default => "set /node/web.port \"${webport}\"",
+          },
+    
+          $stats_gatherer_furl ? {
+            false   => "",
+            default => "set /client/stats_gatherer.furl \"${stats_gatherer_furl}\"",
+          },
+    
+          $helper_furl ? {
+            false   => "",
+            default => "set /client/helper.furl \"${helper_furl}\"",
+          },
+        ],
+        notify => Service["tahoe-${name}"],
+      }
+    }
   }
 }
 
@@ -182,20 +186,30 @@ define tahoe::node ($ensure = present, $directory, $type) {
     home       => $directory,
   }
 
-  file {$directory:
-    ensure => $ensure ? {
-      present => "directory",
-      absent  => "absent"
-    },
-    owner  => $user,
-    mode   => 700,
+  case $ensure {
+    present: {
+      file {$directory:
+        ensure => "directory",
+        owner  => $user,
+        mode   => 700,
+      }
+    }
+    absent: {
+        file {$directory:
+          ensure => absent,
+          force  => true,
+        }
+    }
   }
 
   file {"/etc/init.d/tahoe-${name}":
     ensure  => $ensure,
     content => template("tahoe/tahoe.init.erb"),
     mode    => 755,
-    require => Exec["create ${type} ${name}"],
+    require => $ensure ? {
+      present => Exec["create ${type} ${name}"],
+      absent  => [],
+    },
   }
 
   case $ensure {
