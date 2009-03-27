@@ -109,10 +109,30 @@ define tahoe::storage (
   }
 }
 
+define tahoe::stats-gatherer (
+  $ensure = present,
+  $directory,
+  $webport = false
+) {
+  tahoe::node {$name:
+    ensure    => $ensure,
+    directory => $directory,
+    type      => "stats-gatherer",
+  }
+
+  if $webport {
+    augeas {"tahoe/${name}/webport":
+      context   => "/files${directory}/tahoe.cfg",
+      load_path => $directory,
+      changes   => "set /node/web.port ${webport}",
+    }
+  }
+}
+
 
 define tahoe::node ($ensure = present, $directory, $type) {
   case $type {
-    client,introducer: {}
+    client,introducer,stats-gatherer: {}
     default: { fail "unknown node type: ${type}" }
   }
 
