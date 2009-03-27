@@ -80,7 +80,8 @@ define tahoe::storage (
   $ensure = present,
   $directory,
   $introducer,
-  $webport = false
+  $webport = false,
+  $stats_gatherer = false
 ) {
   tahoe::node {$name:
     ensure    => $ensure,
@@ -105,6 +106,14 @@ define tahoe::storage (
       context   => "/files${directory}/tahoe.cfg",
       load_path => $directory,
       changes   => "set /node/web.port \"${webport}\"",
+    }
+  }
+
+  if $stats_gatherer {
+    augeas {"tahoe/${name}/stats_gatherer.furl":
+      context   => "/files${directory}/tahoe.cfg",
+      load_path => $directory,
+      changes   => "set /client/stats_gatherer.furl \"${stats_gatherer}\"",
     }
   }
 }
