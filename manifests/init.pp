@@ -87,7 +87,7 @@ define tahoe::storage (
     directory       => $directory,
     introducer_furl => $introducer_furl,
     webport         => $webport,
-    stats_gatherer  => $stats_gatherer,
+    stats_gatherer_furl  => $stats_gatherer_furl,
     helper_furl     => $helper_furl,
     storage         => "true",
   }
