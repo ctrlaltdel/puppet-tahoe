@@ -1,6 +1,7 @@
 class tahoe {
   case $operatingsystem {
     Debian: { include tahoe::debian }
+    ubuntu: { include tahoe::debian }
     default:  { include tahoe::base }
   }
 }
@@ -41,6 +42,8 @@ class tahoe::debian inherits tahoe::base {
   case $lsbdistcodename {
     etch:  { $dist = "etch" }
     lenny: { $dist = "etch" }
+    intrepid: { $dist = "hardy" }
+    default: { fail "Unsupported distribution $lsbdistcodename" }
   }
 
   apt::sources_list {"allmydata":
