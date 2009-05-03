@@ -52,7 +52,8 @@ class tahoe::debian inherits tahoe::base {
 deb-src http://allmydata.org/debian/ ${dist} main tahoe",
   }
 
-  package {"allmydata-tahoe":
+  package {"tahoe":
+    name   => "allmydata-tahoe", 
     ensure => "1.3.0",
   }
 }
