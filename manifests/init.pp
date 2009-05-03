@@ -54,7 +54,7 @@ deb-src http://allmydata.org/debian/ ${dist} main tahoe",
 
   package {"tahoe":
     name   => "allmydata-tahoe", 
-    ensure => "1.3.0",
+    ensure => "1.4.1",
   }
 }
 
@@ -224,7 +224,8 @@ define tahoe::node ($ensure = present, $directory, $type) {
         user      => $user,
         logoutput => on_failure,
         creates   => "${directory}/tahoe-${type}.tac",
-        require   => File[$directory],
+        require   => [File[$directory], Package["tahoe"]],
+        before    => Service["tahoe-${name}"],
       }
 
       #
@@ -232,12 +233,12 @@ define tahoe::node ($ensure = present, $directory, $type) {
       #
       exec {"update-rc.d tahoe-${name} defaults":
         creates => "/etc/rc2.d/S20tahoe-${name}",
-        require => File["/etc/init.d/tahoe-${name}"],
+        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
       }
 
       service {"tahoe-${name}":
         ensure  => running,
-        require => File["/etc/init.d/tahoe-${name}"],
+        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
       }
 
       #
@@ -249,6 +250,7 @@ define tahoe::node ($ensure = present, $directory, $type) {
         ensure => present,
         content => template("tahoe/tahoe.aug.erb"),
         require => Exec["create ${type} ${name}"],
+        before    => Service["tahoe-${name}"],
       }
 
       augeas {"tahoe/${name}/nickname":
@@ -257,6 +259,7 @@ define tahoe::node ($ensure = present, $directory, $type) {
         changes   => "set node/nickname ${name}@${fqdn}",
         force     => true,
         require   => Exec["create ${type} ${name}"],
+        before    => Service["tahoe-${name}"],
       }
     }
 
