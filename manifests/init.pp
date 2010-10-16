@@ -1,7 +1,7 @@
 class tahoe {
   case $operatingsystem {
     Debian: { include tahoe::debian }
-    ubuntu: { include tahoe::debian }
+    ubuntu: { include tahoe::ubuntu }
     default:  { include tahoe::base }
   }
 }
@@ -15,9 +15,9 @@ class tahoe::base {
 
 class tahoe::egg inherits tahoe::base {
   package{
-    "python2.4":
+    "python":
       ensure => present;
-    "python2.4-dev":
+    "python-dev":
       ensure => present;
     "python-setuptools":
       ensure => present;
@@ -54,7 +54,21 @@ deb-src http://allmydata.org/debian/ ${dist} main tahoe",
 
   package {"tahoe":
     name   => "allmydata-tahoe", 
-    ensure => "1.4.1",
+    ensure => "latest",
+  }
+}
+
+class tahoe::ubuntu inherits tahoe::base {
+  case $lsbdistcodename {
+    maverick:  { $dist = "maverick" }
+    lucid: { $dist = "lucid" }
+    karmic: { $dist = "karmic" }
+    default: { fail "Unsupported distribution $lsbdistcodename" }
+  }
+  
+  package {"tahoe":
+    name   => "tahoe-lafs",
+    ensure => "latest",
   }
 }
 

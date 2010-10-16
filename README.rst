@@ -2,16 +2,19 @@
 Tahoe-LAFS Puppet module
 ========================
 
-This Puppet module ease the deployment of a Tahoe storage grid across multiple
+This Puppet module ease the deployment of a Tahoe-LAFS storage grid across multiple
 machine thanks to the Puppet system management system.
 
 Currently supported distributions are Debian and Ubuntu but preliminary support
 for easy_install is also present.
 
+This Puppet module depends on the "puppet-common" puppet module, available from
+http://github.com/ctrlaltdel/puppet-common .
+
 Usage
 -----
 
-First, ensure that system-wide Tahoe dependencies are present on your system::
+First, ensure that system-wide Tahoe-LAFS dependencies are present on your system::
 
   include tahoe
 
@@ -72,7 +75,6 @@ The following sample puppet configuration allows the deployment of a complete Ta
   $stats_furl      = "pb://blah@127.0.0.1:55945,1.2.3.4:55945/blah"
  
   node 'srv1.mydomain.com' {
-    include base
     include tahoe
  
     # 
@@ -106,7 +108,6 @@ The following sample puppet configuration allows the deployment of a complete Ta
 
   # Simple storage node with one disk
   node 'srv2.mydomain.com' {
-    include base
     include tahoe
   
     tahoe::storage {"storage1":
@@ -120,7 +121,6 @@ The following sample puppet configuration allows the deployment of a complete Ta
 
   # Storage node with two disks
   node 'srv3.mydomain.com' {
-    include base
     include tahoe
   
     tahoe::storage {"storage2":
