@@ -148,9 +148,6 @@ Bugs
   be automatically installed by Puppet. You have to install them by calling
   apt-get install.
 
-- A recent version of the Augeas library is required and the appropriate Puppet
-  augeas type should be installed on your system.
-
 - It is currently necessary to write the introducer furl by hand to your puppet
   recipe. It is not automatically filled after the introducer node got created.
 
