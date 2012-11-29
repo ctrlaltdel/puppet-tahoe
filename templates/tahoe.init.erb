@@ -1,5 +1,7 @@
 #! /bin/sh
 
+set -e
+
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 NAME=<%= name %>
 USER=<%= user %>
@@ -25,6 +27,9 @@ case "$1" in
     log_begin_msg "Restarting $DESC"
     su $USER -c "tahoe restart $DIRECTORY"
     log_end_msg 0
+    ;;
+  status)
+    status_of_proc -p $DIRECTORY/twistd.pid /usr/bin/python twistd
     ;;
   *)
     echo "Usage: /etc/init.d/tahoe-$NAME {start|stop|restart}"

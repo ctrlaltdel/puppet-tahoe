@@ -7,10 +7,6 @@ class tahoe {
 }
 
 class tahoe::base {
-  file {"/usr/share/augeas/lenses/tahoe.aug":
-    ensure => present,
-    source => "puppet:///tahoe/tahoe.aug",
-  }
 }
 
 class tahoe::egg inherits tahoe::base {
@@ -133,7 +129,7 @@ define tahoe::client (
   $ensure = present,
   $directory,
   $introducer_furl,
-  $webport = false,
+  $webport = "tcp:3456:interface=127.0.0.1",
   $stats_gatherer_furl = false,
   $helper_furl = false,
   $storage = "false",
@@ -143,39 +139,15 @@ define tahoe::client (
     ensure    => $ensure,
     directory => $directory,
     type      => "client",
+    introducer_furl => $introducer_furl,
+    webport => $webport,
+    stats_gatherer_furl => $stats_gatherer_furl,
+    helper_furl => $helper_furl,
+    storage => $storage,
+    helper => $helper,
+
   }
 
-  case $ensure {
-    present: {
-      augeas {$name:
-        context   => "/files${directory}/tahoe.cfg/",
-        load_path => $directory,
-        force     => true,
-        changes   => [
-          "set /client/introducer.furl \"${introducer_furl}\"",
-          "set /storage/enabled ${storage}",
-          "set /helper/enabled ${helper}",
-          "set /node/web.port \"${webport}\"",
-    
-          $webport ? {
-            false   => "",
-            default => "set /node/web.port \"${webport}\"",
-          },
-    
-          $stats_gatherer_furl ? {
-            false   => "",
-            default => "set /client/stats_gatherer.furl \"${stats_gatherer_furl}\"",
-          },
-    
-          $helper_furl ? {
-            false   => "",
-            default => "set /client/helper.furl \"${helper_furl}\"",
-          },
-        ],
-        notify => Service["tahoe-${name}"],
-      }
-    }
-  }
 }
 
 define tahoe::stats-gatherer (
@@ -190,11 +162,23 @@ define tahoe::stats-gatherer (
 }
 
 
-define tahoe::node ($ensure = present, $directory, $type) {
+define tahoe::node (
+  $ensure = present,
+  $directory,
+  $type,
+  $introducer_furl,
+  $webport,
+  $stats_gatherer_furl,
+  $helper_furl,
+  $storage,
+  $helper
+  ) {
   case $type {
     client,introducer,stats-gatherer: {}
     default: { fail "unknown node type: ${type}" }
   }
+
+  $test = "Blah"
 
   $tahoe_cfg = "${directory}/tahoe.cfg"
   $user = "tahoe-${name}"
@@ -230,6 +214,18 @@ define tahoe::node ($ensure = present, $directory, $type) {
     },
   }
 
+  $nickname = "${name}@${fqdn}"
+
+  #
+  # Configuration
+  #
+  file {"${directory}/tahoe.cfg":
+    ensure => $ensure,
+    content => template("tahoe/tahoe.cfg.erb"),
+    notify => Service["tahoe-${name}"],
+    require => Exec["create ${type} ${name}"],
+  }
+
   case $ensure {
     present: {
 
@@ -255,26 +251,6 @@ define tahoe::node ($ensure = present, $directory, $type) {
         require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
       }
 
-      #
-      # Augeas
-      #
-      $augeas_name = gsub($name, "-", "")
-
-      file {"${directory}/${augeas_name}.aug":
-        ensure => present,
-        content => template("tahoe/tahoe.aug.erb"),
-        require => Exec["create ${type} ${name}"],
-        before    => Service["tahoe-${name}"],
-      }
-
-      augeas {"tahoe/${name}/nickname":
-        context   => "/files${directory}/tahoe.cfg",
-        load_path => $directory,
-        changes   => "set node/nickname ${name}@${fqdn}",
-        force     => true,
-        require   => Exec["create ${type} ${name}"],
-        before    => Service["tahoe-${name}"],
-      }
     }
 
     absent: {
