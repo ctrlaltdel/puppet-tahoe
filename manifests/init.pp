@@ -59,6 +59,7 @@ class tahoe::ubuntu inherits tahoe::base {
     maverick:  { $dist = "maverick" }
     lucid: { $dist = "lucid" }
     karmic: { $dist = "karmic" }
+    precise: { $dist = "precise" }
     default: { fail "Unsupported distribution $lsbdistcodename" }
   }
   
