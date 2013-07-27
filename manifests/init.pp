@@ -48,7 +48,7 @@ class tahoe::debian inherits tahoe::base {
 deb-src http://allmydata.org/debian/ ${dist} main tahoe",
   }
 
-  package {"tahoe":
+  package {"tahoe-lafs":
     name   => "allmydata-tahoe", 
     ensure => "latest",
   }
@@ -62,8 +62,7 @@ class tahoe::ubuntu inherits tahoe::base {
     default: { fail "Unsupported distribution $lsbdistcodename" }
   }
   
-  package {"tahoe":
-    name   => "tahoe-lafs",
+  package {"tahoe-lafs":
     ensure => "latest",
   }
 }
@@ -234,7 +233,7 @@ define tahoe::node (
         user      => $user,
         logoutput => on_failure,
         creates   => "${directory}/tahoe-${type}.tac",
-        require   => [File[$directory], Package["tahoe"]],
+        require   => [File[$directory], Package["tahoe-lafs"]],
         before    => Service["tahoe-${name}"],
       }
 
@@ -243,12 +242,12 @@ define tahoe::node (
       #
       exec {"update-rc.d tahoe-${name} defaults":
         creates => "/etc/rc2.d/S20tahoe-${name}",
-        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
+        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe-lafs"]],
       }
 
       service {"tahoe-${name}":
         ensure  => running,
-        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
+        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe-lafs"]],
       }
 
     }
