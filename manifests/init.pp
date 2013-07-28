@@ -212,7 +212,7 @@ define tahoe::node (
   #
   # Configuration
   #
-  file {"${directory}/tahoe.cfg":
+  file {$tahoe_cfg:
     ensure  => $ensure,
     content => template('tahoe/tahoe.cfg.erb'),
     notify  => Service["tahoe-${name}"],
