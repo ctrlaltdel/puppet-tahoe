@@ -1,8 +1,8 @@
 class tahoe {
   case $operatingsystem {
-    Debian: { include tahoe::debian }
-    ubuntu: { include tahoe::ubuntu }
-    default:  { include tahoe::base }
+    Debian:  { include tahoe::debian }
+    ubuntu:  { include tahoe::ubuntu }
+    default: { include tahoe::base }
   }
 }
 
@@ -11,23 +11,23 @@ class tahoe::base {
 
 class tahoe::egg inherits tahoe::base {
   package{
-    "python":
+    'python':
       ensure => present;
-    "python-dev":
+    'python-dev':
       ensure => present;
-    "python-setuptools":
+    'python-setuptools':
       ensure => present;
-    "build-essential":
+    'build-essential':
       ensure => present;
-    "libcrypto++-dev":
+    'libcrypto++-dev':
       ensure => present;
-    "python-twisted":
+    'python-twisted':
       ensure => present;
-    "python-pyopenssl":
+    'python-pyopenssl':
       ensure => present;
   }
 
-  exec {"easy_install allmydata-tahoe":
+  exec {'easy_install allmydata-tahoe':
     unless => "python -c 'import allmydata'",
   }
 }
@@ -36,47 +36,46 @@ class tahoe::debian inherits tahoe::base {
   # BUG: Those packages are not authenticated
 
   case $lsbdistcodename {
-    etch:  { $dist = "etch" }
-    lenny: { $dist = "etch" }
-    intrepid: { $dist = "hardy" }
-    default: { fail "Unsupported distribution $lsbdistcodename" }
+    etch:     { $dist = 'etch' }
+    lenny:    { $dist = 'etch' }
+    intrepid: { $dist = 'hardy' }
+    default:  { fail "Unsupported distribution $lsbdistcodename" }
   }
 
-  apt::sources_list {"allmydata":
+  apt::sources_list {'allmydata':
     ensure => present,
     content => "deb http://allmydata.org/debian/ ${dist} main tahoe
 deb-src http://allmydata.org/debian/ ${dist} main tahoe",
   }
 
-  package {"tahoe":
-    name   => "allmydata-tahoe", 
-    ensure => "latest",
+  package {'tahoe-lafs':
+    name   => 'allmydata-tahoe',
+    ensure => 'latest',
   }
 }
 
 class tahoe::ubuntu inherits tahoe::base {
   case $lsbdistcodename {
-    maverick:  { $dist = "maverick" }
-    lucid: { $dist = "lucid" }
-    karmic: { $dist = "karmic" }
-    default: { fail "Unsupported distribution $lsbdistcodename" }
+    maverick: { $dist = 'maverick' }
+    lucid:    { $dist = 'lucid' }
+    karmic:   { $dist = 'karmic' }
+    default:  { fail "Unsupported distribution $lsbdistcodename" }
   }
   
-  package {"tahoe":
-    name   => "tahoe-lafs",
-    ensure => "latest",
+  package {'tahoe-lafs':
+    ensure => 'latest',
   }
 }
 
 define tahoe::introducer (
-  $ensure = present,
+  $ensure  = present,
   $directory,
-  $webport = false
+  $webport = false,
 ) {
   tahoe::node {$name:
     ensure    => $ensure,
     directory => $directory,
-    type      => "introducer",
+    type      => 'introducer',
   }
 
   if $webport {
@@ -89,30 +88,30 @@ define tahoe::introducer (
 }
 
 define tahoe::storage (
-  $ensure = present,
+  $ensure              = present,
   $directory,
   $introducer_furl,
-  $webport = false,
+  $webport             = false,
   $stats_gatherer_furl = false,
-  $helper_furl = false
+  $helper_furl         = false,
 ) {
   tahoe::client {$name:
-    ensure          => $ensure,
-    directory       => $directory,
-    introducer_furl => $introducer_furl,
-    webport         => $webport,
-    stats_gatherer_furl  => $stats_gatherer_furl,
-    helper_furl     => $helper_furl,
-    storage         => "true",
+    ensure              => $ensure,
+    directory           => $directory,
+    introducer_furl     => $introducer_furl,
+    webport             => $webport,
+    stats_gatherer_furl => $stats_gatherer_furl,
+    helper_furl         => $helper_furl,
+    storage             => true,
   }
 }
 
 define tahoe::helper (
-  $ensure = present,
+  $ensure              = present,
   $directory,
   $introducer_furl,
-  $webport = false,
-  $stats_gatherer_furl = false
+  $webport             = false,
+  $stats_gatherer_furl = false,
 ) {
   tahoe::client {$name:
     ensure                => $ensure,
@@ -120,93 +119,88 @@ define tahoe::helper (
     introducer_furl       => $introducer_furl,
     webport               => $webport,
     stats_gatherer_furl   => $stats_gatherer_furl,
-    helper                => "true",
+    helper                => true,
   }
 }
 
-
 define tahoe::client (
-  $ensure = present,
+  $ensure              = present,
   $directory,
   $introducer_furl,
-  $webport = "tcp:3456:interface=127.0.0.1",
+  $webport             = 'tcp:3456:interface=127.0.0.1',
   $stats_gatherer_furl = false,
-  $helper_furl = false,
-  $storage = "false",
-  $helper  = "false"
+  $helper_furl         = false,
+  $storage             = false,
+  $helper              = false,
 ) {
   tahoe::node {$name:
-    ensure    => $ensure,
-    directory => $directory,
-    type      => "client",
-    introducer_furl => $introducer_furl,
-    webport => $webport,
+    ensure              => $ensure,
+    directory           => $directory,
+    type                => 'client',
+    introducer_furl     => $introducer_furl,
+    webport             => $webport,
     stats_gatherer_furl => $stats_gatherer_furl,
-    helper_furl => $helper_furl,
-    storage => $storage,
-    helper => $helper,
-
+    helper_furl         => $helper_furl,
+    storage             => $storage,
+    helper              => $helper,
   }
-
 }
 
 define tahoe::stats-gatherer (
   $ensure = present,
-  $directory
+  $directory,
 ) {
   tahoe::node {$name:
     ensure    => $ensure,
     directory => $directory,
-    type      => "stats-gatherer",
+    type      => 'stats-gatherer',
   }
 }
-
 
 define tahoe::node (
   $ensure = present,
   $directory,
   $type,
   $introducer_furl,
+  $nickname            = "${name}@${fqdn}",
   $webport,
   $stats_gatherer_furl,
   $helper_furl,
   $storage,
-  $helper
+  $helper,
   ) {
   case $type {
     client,introducer,stats-gatherer: {}
     default: { fail "unknown node type: ${type}" }
   }
 
-  $test = "Blah"
-
   $tahoe_cfg = "${directory}/tahoe.cfg"
   $user = "tahoe-${name}"
 
   user {$user:
-    ensure     => $ensure,
-    home       => $directory,
+    ensure => $ensure,
+    home   => $directory,
   }
 
   case $ensure {
     present: {
       file {$directory:
-        ensure => "directory",
+        ensure => 'directory',
         owner  => $user,
         mode   => 700,
       }
     }
     absent: {
-        file {$directory:
-          ensure => absent,
-          force  => true,
-        }
+      file {$directory:
+        ensure => absent,
+        force  => true,
+      }
     }
   }
 
   file {"/etc/init.d/tahoe-${name}":
     ensure  => $ensure,
-    content => template("tahoe/tahoe.init.erb"),
+    content => template('tahoe/tahoe.init.erb'),
     mode    => 755,
     require => $ensure ? {
       present => Exec["create ${type} ${name}"],
@@ -214,15 +208,13 @@ define tahoe::node (
     },
   }
 
-  $nickname = "${name}@${fqdn}"
-
   #
   # Configuration
   #
-  file {"${directory}/tahoe.cfg":
-    ensure => $ensure,
-    content => template("tahoe/tahoe.cfg.erb"),
-    notify => Service["tahoe-${name}"],
+  file {$tahoe_cfg:
+    ensure  => $ensure,
+    content => template('tahoe/tahoe.cfg.erb'),
+    notify  => Service["tahoe-${name}"],
     require => Exec["create ${type} ${name}"],
   }
 
@@ -234,7 +226,7 @@ define tahoe::node (
         user      => $user,
         logoutput => on_failure,
         creates   => "${directory}/tahoe-${type}.tac",
-        require   => [File[$directory], Package["tahoe"]],
+        require   => [File[$directory], Package['tahoe-lafs']],
         before    => Service["tahoe-${name}"],
       }
 
@@ -243,12 +235,12 @@ define tahoe::node (
       #
       exec {"update-rc.d tahoe-${name} defaults":
         creates => "/etc/rc2.d/S20tahoe-${name}",
-        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
+        require => [File["/etc/init.d/tahoe-${name}"], Package['tahoe-lafs']],
       }
 
       service {"tahoe-${name}":
         ensure  => running,
-        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
+        require => [File["/etc/init.d/tahoe-${name}"], Package['tahoe-lafs']],
       }
 
     }
