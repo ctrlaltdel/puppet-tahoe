@@ -162,6 +162,7 @@ define tahoe::node (
   $directory,
   $type,
   $introducer_furl,
+  $nickname            = "${name}@${fqdn}",
   $webport,
   $stats_gatherer_furl,
   $helper_furl,
@@ -206,8 +207,6 @@ define tahoe::node (
       absent  => [],
     },
   }
-
-  $nickname = "${name}@${fqdn}"
 
   #
   # Configuration
