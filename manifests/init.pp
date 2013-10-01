@@ -33,24 +33,9 @@ class tahoe::egg inherits tahoe::base {
 }
 
 class tahoe::debian inherits tahoe::base {
-  # BUG: Those packages are not authenticated
 
-  case $lsbdistcodename {
-    etch:  { $dist = "etch" }
-    lenny: { $dist = "etch" }
-    intrepid: { $dist = "hardy" }
-    default: { fail "Unsupported distribution $lsbdistcodename" }
-  }
-
-  apt::sources_list {"allmydata":
-    ensure => present,
-    content => "deb http://allmydata.org/debian/ ${dist} main tahoe
-deb-src http://allmydata.org/debian/ ${dist} main tahoe",
-  }
-
-  package {"tahoe":
-    name   => "allmydata-tahoe", 
-    ensure => "latest",
+  package { 'tahoe-lafs':
+    ensure => 'latest',
   }
 }
 
