@@ -15,8 +15,6 @@ define tahoe::node (
     default: { fail "unknown node type: ${type}" }
   }
 
-  $test = "Blah"
-
   $tahoe_cfg = "${directory}/tahoe.cfg"
   $user = "tahoe-${name}"
 
