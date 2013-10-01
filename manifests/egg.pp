@@ -1,22 +1,23 @@
 class tahoe::egg inherits tahoe::base {
-  package{
-    "python":
+
+  package {
+    'python':
       ensure => present;
-    "python-dev":
+    'python-dev':
       ensure => present;
-    "python-setuptools":
+    'python-setuptools':
       ensure => present;
-    "build-essential":
+    'build-essential':
       ensure => present;
-    "libcrypto++-dev":
+    'libcrypto++-dev':
       ensure => present;
-    "python-twisted":
+    'python-twisted':
       ensure => present;
-    "python-pyopenssl":
+    'python-pyopenssl':
       ensure => present;
   }
 
-  exec {"easy_install allmydata-tahoe":
+  exec { 'easy_install allmydata-tahoe':
     unless => "python -c 'import allmydata'",
   }
 }

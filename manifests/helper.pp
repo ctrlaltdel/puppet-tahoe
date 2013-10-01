@@ -1,7 +1,7 @@
 define tahoe::helper (
-  $ensure = present,
   $directory,
   $introducer_furl,
+  $ensure = present,
   $webport = false,
   $stats_gatherer_furl = false
 ) {
@@ -11,6 +11,6 @@ define tahoe::helper (
     introducer_furl       => $introducer_furl,
     webport               => $webport,
     stats_gatherer_furl   => $stats_gatherer_furl,
-    helper                => "true",
+    helper                => true,
   }
 }

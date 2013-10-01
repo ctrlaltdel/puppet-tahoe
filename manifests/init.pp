@@ -1,5 +1,5 @@
 class tahoe {
-  case $operatingsystem {
+  case $::operatingsystem {
     Debian: { include tahoe::debian }
     ubuntu: { include tahoe::ubuntu }
     default:  { include tahoe::base }

@@ -1,5 +1,4 @@
 define tahoe::node (
-  $ensure = present,
   $directory,
   $type,
   $introducer_furl,
@@ -7,8 +6,10 @@ define tahoe::node (
   $stats_gatherer_furl,
   $helper_furl,
   $storage,
-  $helper
+  $helper,
+  $ensure = present
   ) {
+
   case $type {
     client,introducer,stats-gatherer: {}
     default: { fail "unknown node type: ${type}" }
@@ -19,58 +20,59 @@ define tahoe::node (
   $tahoe_cfg = "${directory}/tahoe.cfg"
   $user = "tahoe-${name}"
 
-  user {$user:
+  user { $user:
     ensure     => $ensure,
     home       => $directory,
   }
 
   case $ensure {
     present: {
-      file {$directory:
-        ensure => "directory",
+      file { $directory:
+        ensure => directory,
         owner  => $user,
-        mode   => 700,
+        mode   => '0700',
       }
     }
     absent: {
-        file {$directory:
+        file { $directory:
           ensure => absent,
           force  => true,
         }
     }
+    default: { fail 'unknown ensure value' }
   }
 
-  file {"/etc/init.d/tahoe-${name}":
+  file { "/etc/init.d/tahoe-${name}":
     ensure  => $ensure,
-    content => template("tahoe/tahoe.init.erb"),
-    mode    => 755,
+    content => template('tahoe/tahoe.init.erb'),
+    mode    => '0755',
     require => $ensure ? {
       present => Exec["create ${type} ${name}"],
       absent  => [],
     },
   }
 
-  $nickname = "${name}@${fqdn}"
+  $nickname = "${name}@${::fqdn}"
 
   #
   # Configuration
   #
-  file {"${directory}/tahoe.cfg":
-    ensure => $ensure,
-    content => template("tahoe/tahoe.cfg.erb"),
-    notify => Service["tahoe-${name}"],
+  file { "${directory}/tahoe.cfg":
+    ensure  => $ensure,
+    content => template('tahoe/tahoe.cfg.erb'),
+    notify  => Service["tahoe-${name}"],
     require => Exec["create ${type} ${name}"],
   }
 
   case $ensure {
     present: {
 
-      exec {"create ${type} ${name}":
+      exec { "create ${type} ${name}":
         command   => "tahoe create-${type} --basedir=${directory}",
         user      => $user,
         logoutput => on_failure,
         creates   => "${directory}/tahoe-${type}.tac",
-        require   => [File[$directory], Package["tahoe"]],
+        require   => [ File[$directory], Package['tahoe'] ],
         before    => Service["tahoe-${name}"],
       }
 
@@ -79,12 +81,12 @@ define tahoe::node (
       #
       exec {"update-rc.d tahoe-${name} defaults":
         creates => "/etc/rc2.d/S20tahoe-${name}",
-        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
+        require => [ File["/etc/init.d/tahoe-${name}"], Package['tahoe'] ],
       }
 
       service {"tahoe-${name}":
         ensure  => running,
-        require => [File["/etc/init.d/tahoe-${name}"], Package["tahoe"]],
+        require => [ File["/etc/init.d/tahoe-${name}"], Package['tahoe'] ],
       }
 
     }
@@ -94,5 +96,6 @@ define tahoe::node (
         onlyif => "test -f /etc/rc2.d/S20tahoe-${name}",
       }
     }
+    default: { fail "unknown ensure value" }
   }
 }

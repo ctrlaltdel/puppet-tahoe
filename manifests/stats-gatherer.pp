@@ -1,10 +1,11 @@
 define tahoe::stats-gatherer (
-  $ensure = present,
-  $directory
+  $directory,
+  $ensure = present
 ) {
-  tahoe::node {$name:
+
+  tahoe::node { $name:
     ensure    => $ensure,
     directory => $directory,
-    type      => "stats-gatherer",
+    type      => 'stats-gatherer'
   }
 }
