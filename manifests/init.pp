@@ -164,7 +164,10 @@ define tahoe::node (
   $stats_gatherer_furl,
   $helper_furl,
   $storage,
-  $helper
+  $helper,
+  $shares_needed = 3,
+  $shares_happy = 7,
+  $shares_total = 10
   ) {
   case $type {
     client,introducer,stats-gatherer: {}
