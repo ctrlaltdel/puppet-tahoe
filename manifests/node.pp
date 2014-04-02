@@ -94,6 +94,6 @@ define tahoe::node (
         onlyif => "test -f /etc/rc2.d/S20tahoe-${name}",
       }
     }
-    default: { fail "unknown ensure value" }
+    default: { fail 'unknown ensure value' }
   }
 }

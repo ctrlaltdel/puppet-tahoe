@@ -1,6 +1,6 @@
 define tahoe::introducer (
   $directory,
-  $ensure = present,
+  $ensure  = present,
   $webport = false
 ) {
   tahoe::node { $name:

@@ -18,6 +18,6 @@ class tahoe::egg inherits tahoe::base {
   }
 
   exec { 'easy_install allmydata-tahoe':
-    unless => "python -c 'import allmydata'",
+    unless => 'python -c "import allmydata"',
   }
 }
