@@ -7,6 +7,9 @@ define tahoe::node (
   $helper_furl,
   $storage,
   $helper,
+  $shares_needed = 3,
+  $shares_happy = 7,
+  $shares_total = 10,
   $ensure = present
   ) {
 
